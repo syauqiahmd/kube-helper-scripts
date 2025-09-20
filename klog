@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# --- Color Definitions ---
+C_RESET='\033[0m'
+C_RED='\033[0;31m'
+C_GREEN='\033[0;32m'
+C_YELLOW='\033[0;33m'
+C_BOLD='\033[1m'
+
+# Define the function
+function klog-search() {
+    local namespace pod search_keywords ns_list pod_list selected_ns_index selected_pod_index follow_logs follow_flag
+
+    # If a namespace is provided as an argument, use it directly.
+    if [ -n "$1" ]; then
+        namespace="$1"
+        # Check if the provided namespace exists
+        if ! kubectl get namespace "$namespace" &> /dev/null; then
+            echo -e "${C_RED}Error: Namespace '$namespace' not found.${C_RESET}"
+            return 1
+        fi
+    else
+        # Otherwise, interactively select a namespace from a numbered list
+        echo -e "${C_BOLD}Please select a namespace:${C_RESET}"
+        ns_list=($(kubectl get ns -o jsonpath='{.items[*].metadata.name}'))
+
+        if [ ${#ns_list[@]} -eq 0 ]; then
+            echo -e "${C_RED}No namespaces found. Exiting.${C_RESET}"
+            return 1
+        fi
+
+        # Print numbered list
+        for i in "${!ns_list[@]}"; do
+            echo -e "$((i+1))) ${C_YELLOW}${ns_list[$i]}${C_RESET}"
+        done
+
+        read -p "$(echo -e "${C_GREEN}Enter number for namespace: ${C_RESET}")" selected_ns_index
+
+        # Validate input
+        if ! [[ "$selected_ns_index" =~ ^[0-9]+$ ]] || [ "$selected_ns_index" -lt 1 ] || [ "$selected_ns_index" -gt ${#ns_list[@]} ]; then
+            echo -e "${C_RED}Invalid selection. Exiting.${C_RESET}"
+            return 1
+        fi
+
+        namespace="${ns_list[selected_ns_index-1]}"
+    fi
+
+    # Interactively select a pod from the chosen namespace
+    echo -e "\n${C_BOLD}Please select a pod from the namespace '${namespace}':${C_RESET}"
+    pod_list=($(kubectl get pods -n "$namespace" --no-headers | awk '{print $1}'))
+
+    # Check if the list is empty
+    if [ ${#pod_list[@]} -eq 0 ]; then
+        echo -e "${C_RED}No pods found in namespace '$namespace'. Exiting.${C_RESET}"
+        return 1
+    fi
+
+    # Print numbered list
+    for i in "${!pod_list[@]}"; do
+        echo -e "$((i+1))) ${C_YELLOW}${pod_list[$i]}${C_RESET}"
+    done
+
+    read -p "$(echo -e "${C_GREEN}Enter number for pod: ${C_RESET}")" selected_pod_index
+
+    # Validate input
+    if ! [[ "$selected_pod_index" =~ ^[0-9]+$ ]] || [ "$selected_pod_index" -lt 1 ] || [ "$selected_pod_index" -gt ${#pod_list[@]} ]; then
+        echo -e "${C_RED}Invalid selection. Exiting.${C_RESET}"
+        return 1
+    fi
+
+    pod="${pod_list[selected_pod_index-1]}"
+
+    # Prompt for search keywords
+    read -p "$(echo -e "\n${C_GREEN}Enter keywords to search (use ';' to separate): ${C_RESET}")" search_keywords
+
+    # Ask user if they want to follow the logs
+    read -p "$(echo -e "${C_GREEN}Follow logs? (y/N): ${C_RESET}")" follow_logs
+    if [[ "$follow_logs" =~ ^[Yy]$ ]]; then
+        follow_flag="-f"
+    fi
+
+    # If no keywords are entered, show all logs
+    if [ -z "$search_keywords" ]; then
+        echo -e "\nDisplaying logs for pod ${C_YELLOW}'$pod'${C_RESET} in namespace ${C_YELLOW}'$namespace'${C_RESET}..."
+        # Using ${follow_flag} which will be either empty or "-f"
+        kubectl logs ${follow_flag} "$pod" -n "$namespace"
+        return 0
+    fi
+
+    # Split keywords and construct the grep command
+    IFS=';' read -ra keywords_array <<< "$search_keywords"
+    
+    # Use a single grep with -E to match all keywords and highlight them
+    grep_pattern=$(printf "%s|" "${keywords_array[@]}" | sed 's/|$//')
+
+    echo -e "\nSearching logs for pod ${C_YELLOW}'$pod'${C_RESET} in namespace ${C_YELLOW}'$namespace'${C_RESET}..."
+    
+    # Using ${follow_flag} which will be either empty or "-f"
+    kubectl logs ${follow_flag} "$pod" -n "$namespace" | grep --color=always -E "$grep_pattern"
+}
+
+klog-search "$@"
