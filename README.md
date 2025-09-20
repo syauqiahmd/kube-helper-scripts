@@ -83,6 +83,37 @@ API_KEY=s3cr3t-v4lu3
 API_URL=https://api.example.com
 ```
 
+### kdesc
+
+Interactively describe any Kubernetes resource.
+
+```
+$ kdesc
+Please select a resource type:
+1) pod
+2) service
+3) deployment
+...
+Enter number for resource type: 3
+
+Please select a namespace:
+1) default
+2) dev
+...
+Enter number for namespace: 2
+
+Please select a resource from dev to describe:
+1) my-app-deployment
+...
+Enter number for resource: 1
+
+Describing deployment/my-app-deployment in namespace dev...
+Name:                   my-app-deployment
+Namespace:              dev
+CreationTimestamp:      ...
+...
+```
+
 ---
 
 ## Pro-Tip: Upgrade with `fzf`

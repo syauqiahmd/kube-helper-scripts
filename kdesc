@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# A simple Bash script to interactively describe Kubernetes resources.
+
+# --- Color Definitions ---
+C_RESET='\033[0m'
+C_RED='\033[0;31m'
+C_GREEN='\033[0;32m'
+C_YELLOW='\033[0;33m'
+C_BOLD='\033[1m'
+
+# Define the function
+function kdesc-search() {
+    local resource_type namespace resource_name selected_index namespace_flag
+    local resource_types ns_list resource_list
+
+    # --- 1. Select Resource Type ---
+    echo -e "${C_BOLD}Please select a resource type:${C_RESET}"
+    resource_types=("pod" "service" "deployment" "ingress" "configmap" "secret" "pvc" "node" "namespace")
+    
+    for i in "${!resource_types[@]}"; do
+        echo -e "$((i+1))) ${C_YELLOW}${resource_types[$i]}${C_RESET}"
+    done
+
+    read -p "$(echo -e "${C_GREEN}Enter number for resource type: ${C_RESET}")" selected_index
+
+    # Validate input
+    if ! [[ "$selected_index" =~ ^[0-9]+$ ]] || [ "$selected_index" -lt 1 ] || [ "$selected_index" -gt ${#resource_types[@]} ]; then
+        echo -e "${C_RED}Invalid selection. Exiting.${C_RESET}"
+        return 1
+    fi
+    resource_type="${resource_types[selected_index-1]}"
+
+    # --- 2. Select Namespace (if applicable) ---
+    non_namespaced_types=("node" "namespace")
+    if [[ ! " ${non_namespaced_types[@]} " =~ " ${resource_type} " ]]; then
+        echo -e "\n${C_BOLD}Please select a namespace:${C_RESET}"
+        ns_list=($(kubectl get ns -o jsonpath='{.items[*].metadata.name}'))
+
+        if [ ${#ns_list[@]} -eq 0 ]; then
+            echo -e "${C_RED}No namespaces found. Exiting.${C_RESET}"
+            return 1
+        fi
+
+        for i in "${!ns_list[@]}"; do
+            echo -e "$((i+1))) ${C_YELLOW}${ns_list[$i]}${C_RESET}"
+        done
+
+        read -p "$(echo -e "${C_GREEN}Enter number for namespace: ${C_RESET}")" selected_index
+
+        if ! [[ "$selected_index" =~ ^[0-9]+$ ]] || [ "$selected_index" -lt 1 ] || [ "$selected_index" -gt ${#ns_list[@]} ]; then
+            echo -e "${C_RED}Invalid selection. Exiting.${C_RESET}"
+            return 1
+        fi
+        namespace="${ns_list[selected_index-1]}"
+        namespace_flag="-n ${namespace}"
+    else
+        namespace="(cluster-wide)"
+        namespace_flag=""
+    fi
+
+    # --- 3. Select Resource ---
+    echo -e "\n${C_BOLD}Please select a resource from ${C_YELLOW}${namespace}${C_RESET} to describe:${C_RESET}"
+    # Use a temporary file to handle potential errors from kubectl get
+    temp_resource_file=$(mktemp)
+    if ! kubectl get ${resource_type} ${namespace_flag} -o jsonpath='{.items[*].metadata.name}' > "$temp_resource_file" 2>/dev/null; then
+        echo -e "${C_RED}Could not list resources of type '${resource_type}'. Please check the resource type and your permissions.${C_RESET}"
+        rm "$temp_resource_file"
+        return 1
+    fi
+    read -r -a resource_list < "$temp_resource_file"
+    rm "$temp_resource_file"
+
+    if [ ${#resource_list[@]} -eq 0 ]; then
+        echo -e "${C_RED}No resources of type '${resource_type}' found in '${namespace}'. Exiting.${C_RESET}"
+        return 1
+    fi
+
+    for i in "${!resource_list[@]}"; do
+        echo -e "$((i+1))) ${C_YELLOW}${resource_list[$i]}${C_RESET}"
+    done
+
+    read -p "$(echo -e "${C_GREEN}Enter number for resource: ${C_RESET}")" selected_index
+
+    if ! [[ "$selected_index" =~ ^[0-9]+$ ]] || [ "$selected_index" -lt 1 ] || [ "$selected_index" -gt ${#resource_list[@]} ]; then
+        echo -e "${C_RED}Invalid selection. Exiting.${C_RESET}"
+        return 1
+    fi
+    resource_name="${resource_list[selected_index-1]}"
+
+    # --- 4. Execute Describe ---
+    echo -e "\nDescribing ${C_YELLOW}${resource_type}/${resource_name}${C_RESET} in namespace ${C_YELLOW}${namespace}${C_RESET}...\n"
+    kubectl describe ${resource_type} ${resource_name} ${namespace_flag}
+}
+
+kdesc-search "$@"
