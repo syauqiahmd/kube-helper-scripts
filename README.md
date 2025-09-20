@@ -1,8 +1,8 @@
-# klog & kenv: Kubernetes Helper Scripts
+# Kubernetes Helper Scripts
 
-`klog` and `kenv` are simple, interactive bash scripts designed to streamline common `kubectl` tasks: viewing logs and checking environment variables.
+`klog`, `kenv`, and `kdesc` are simple, interactive bash scripts designed to streamline common `kubectl` tasks.
 
-They provide a user-friendly, numbered menu to select namespaces and pods, eliminating the need to copy and paste long pod names.
+They provide a user-friendly, numbered menu to select namespaces and resources, eliminating the need to type or copy and paste long names.
 
 ---
 
@@ -24,15 +24,16 @@ They provide a user-friendly, numbered menu to select namespaces and pods, elimi
 1.  **Clone the repository or download the scripts.**
 
 2.  **Make the scripts executable:**
+
     ```bash
-    chmod +x klog kenv
+    chmod +x klog kenv kdesc
     ```
 
 3.  **Move the scripts to a directory in your system's PATH.**
     This is the recommended step for easy access from anywhere in your terminal.
     ```bash
     # Example: move to /usr/local/bin
-    sudo mv klog kenv /usr/local/bin/
+    sudo mv klog kenv kdesc /usr/local/bin/
     ```
 
 ## Usage
@@ -121,6 +122,7 @@ CreationTimestamp:      ...
 For an even better experience, you can use `fzf` (a command-line fuzzy finder) to create a powerful, interactive search menu instead of the numbered list.
 
 **1. Install `fzf`:**
+
 ```bash
 # On macOS
 brew install fzf
@@ -129,15 +131,16 @@ brew install fzf
 ```
 
 **2. Modify the scripts:**
-   Replace the `for` loop and `read` command for namespace/pod selection with a single `fzf` line. 
+Replace the `for` loop and `read` command for namespace/pod selection with a single `fzf` line.
 
-   *Example for namespace selection:*
-   ```diff
-   - for i in "${!ns_list[@]}"; do ... done
-   - read -p "..." selected_ns_index
-   - namespace="${ns_list[selected_ns_index-1]}"
-   + namespace=$(printf "%s\n" "${ns_list[@]}" | fzf)
-   ```
+_Example for namespace selection:_
+
+```diff
+- for i in "${!ns_list[@]}"; do ... done
+- read -p "..." selected_ns_index
+- namespace="${ns_list[selected_ns_index-1]}"
++ namespace=$(printf "%s\n" "${ns_list[@]}" | fzf)
+```
 
 ---
 
