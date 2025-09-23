@@ -23,20 +23,24 @@ They provide a user-friendly, numbered menu to select namespaces and resources, 
 
 ## Installation
 
+An installation script is provided to automatically make the scripts executable and copy them to a suitable directory in your system's PATH.
+
 1.  **Clone the repository or download the scripts.**
 
-2.  **Make the scripts executable:**
-
+2.  **Navigate into the project directory:**
     ```bash
-    chmod +x klog kenv kdesc
+    cd kube-helper-scripts
     ```
 
-3.  **Move the scripts to a directory in your system's PATH.**
-    This is the recommended step for easy access from anywhere in your terminal.
+3.  **Run the installation script:**
     ```bash
-    # Example: move to /usr/local/bin
-    sudo mv klog kenv kdesc /usr/local/bin/
+    chmod +x install.sh
+    ./install.sh
     ```
+
+The script will attempt to install the scripts to a user-local directory (like `~/.local/bin`) if it is in your `$PATH`. Otherwise, it will fall back to `/usr/local/bin`, which may prompt for a `sudo` password.
+
+After installation, you may need to restart your terminal or source your shell profile (e.g., `source ~/.bashrc`) for the new commands to be available.
 
 ## Usage
 
