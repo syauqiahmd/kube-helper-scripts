@@ -9,9 +9,11 @@ They provide a user-friendly, numbered menu to select namespaces and resources, 
 ## Features
 
 - **Interactive Selection**: Easily select namespaces and pods from a numbered list.
+- **Interactive Loop**: After viewing logs, you can instantly search again, switch pods, or even change namespaces without restarting the script.
 - **Colorful Interface**: Color-coded prompts and lists for better readability.
 - **Keyword Filtering**: Instantly filter logs or environment variables using one or more keywords.
 - **Log Following**: `klog` includes an option to stream logs in real-time (`kubectl logs -f`).
+- **Flexible Log Tailing**: Specify the number of log lines to retrieve (e.g., the last 100 lines).
 - **Zero Dependencies**: Written in pure bash with no external dependencies required.
 - **Argument Support**: Pass in a namespace as an argument to skip the namespace selection menu (e.g., `./klog my-namespace`).
 
@@ -44,6 +46,10 @@ Once installed, you can run the scripts directly from your terminal.
 
 Run the script with `klog` or `klog <namespace>`.
 
+The script will guide you through selecting a namespace and pod. You can then enter keywords to filter the logs, choose to follow them live, and specify how many lines to retrieve.
+
+After the logs are displayed, a menu will appear, allowing you to start a new search, switch pods, or change namespaces.
+
 ```
 $ klog
 Please select a namespace:
@@ -58,11 +64,20 @@ Please select a pod from the namespace 'dev':
 Enter number for pod: 1
 
 Enter keywords to search (use ';' to separate): ERROR;timeout
-Follow logs? (y/N): y
+Follow logs? (y/N): n
+Enter number of log lines to fetch (default: 10, use -1 for all): 50
 
 Searching logs for pod 'logger-dev-1-7787d59d78-j4m65' in namespace 'dev'...
 [ERROR] 2025-09-21T20:00:00.000Z - A timeout occurred.
 ...
+
+What do you want to do next?
+1) Search again in the same pod ('logger-dev-1-7787d59d78-j4m65')
+2) Select another pod in the same namespace ('dev')
+3) Select another namespace
+q) Quit
+Enter your choice: q
+Exiting.
 ```
 
 ### kenv
