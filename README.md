@@ -1,5 +1,7 @@
 # Kubernetes Helper Scripts
 
+![Demo](demo.gif)
+
 `klog`, `kenv`, and `kdesc` are simple, interactive bash scripts designed to streamline common `kubectl` tasks.
 
 They provide a user-friendly, numbered menu to select namespaces and resources, eliminating the need to type or copy and paste long names.
